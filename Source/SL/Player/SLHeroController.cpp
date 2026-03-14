@@ -205,6 +205,7 @@ void ASLHeroController::InputAbilityTagPressed(const FInputActionValue& InputAct
 		const ASLHero* Hero = Cast<ASLHero>(MyPawn);
 		if (USLAbilitySystemComponent* ASC = Hero->GetSLAbilitySystemComponent())
 		{
+			UE_LOG(LogTemp, Display, TEXT("InputAbilityTagPressed : %s"), *GameplayTag.ToString());
 			ASC->AbilityInputTagPressed(GameplayTag);
 		}
 	}
@@ -217,7 +218,7 @@ void ASLHeroController::InputAbilityTagReleased(const FInputActionValue& InputAc
 		const ASLHero* Hero = Cast<ASLHero>(MyPawn);
 		if (USLAbilitySystemComponent* ASC = Hero->GetSLAbilitySystemComponent())
 		{
-			ASC->AbilityInputTagPressed(GameplayTag);
+			ASC->AbilityInputTagReleased(GameplayTag);
 		}
 	}
 }

@@ -21,6 +21,7 @@ protected:
 	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData*
 	                             TriggerEventData) override;
 
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 protected:
 	UFUNCTION()
 	void OnMontageCompleted();
@@ -34,4 +35,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UGameplayEffect> ReduceStaminaEffectClass;
+	
+	bool bWasUsingControllerRotation = false;
 };

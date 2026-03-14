@@ -4,6 +4,7 @@
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "SL/Util/SLLogChannels.h"
 
 UGA_Dodge::UGA_Dodge(const FObjectInitializer& ObjectInitializer)
@@ -25,9 +26,12 @@ void UGA_Dodge::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 
     if (ACharacter* Character = Cast<ACharacter>(ActorInfo->AvatarActor.Get()))
     {
+        bWasUsingControllerRotation = Character->bUseControllerRotationYaw;
+        Character->bUseControllerRotationYaw = false;
+        Character->GetCharacterMovement()->bOrientRotationToMovement = true;
+
         FVector InputVector = Character->GetLastMovementInputVector();
 
-        // 만약 입력이 있다면 (가만히 서서 구르는 게 아니라면)
         if (!InputVector.IsNearlyZero())
         {
             FRotator TargetRotation = InputVector.Rotation();
@@ -71,6 +75,23 @@ void UGA_Dodge::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
     {
         UE_LOG(LogSL, Error, TEXT("DodgeMontage가 설정되지 않았습니다!"));
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+    }
+}
+
+void UGA_Dodge::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+    const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+    if (bWasUsingControllerRotation)
+    {
+        if (ACharacter* Character = Cast<ACharacter>(ActorInfo->AvatarActor.Get()))
+        {
+            Character->bUseControllerRotationYaw = true;
+            Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+        }
+
+        bWasUsingControllerRotation = false;
     }
 }
 

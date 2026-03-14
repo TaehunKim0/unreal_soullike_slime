@@ -3,8 +3,12 @@
 
 #include "SL/Enemy/SLEnemy.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/AssetManager.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "SL/Abilities/GA_Focus.h"
 #include "SL/Abilities/SLAbilitySystemComponent.h"
 #include "SL/Attributes/HealthAttributeSet.h"
 #include "SL/Data/SLAbilitySet.h"
@@ -14,6 +18,8 @@ ASLEnemy::ASLEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	SLAbilitySystemComponent = CreateDefaultSubobject<USLAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	LockOnWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
+	LockOnWidgetComp->SetupAttachment(GetCapsuleComponent());
 }
 
 UAbilitySystemComponent* ASLEnemy::GetAbilitySystemComponent() const
@@ -47,6 +53,24 @@ void ASLEnemy::BeginPlay()
 				.AddUObject(this, &ASLEnemy::HandleHealthChanged);
 		}
 	}
+
+	UGameplayMessageSubsystem& MsgSubsystem = UGameplayMessageSubsystem::Get(this);
+	MsgSubsystem.RegisterListener(
+		FGameplayTag::RequestGameplayTag(FName("Message.LockOn")),
+		this,
+		&ASLEnemy::OnTargetLockMessageReceived 
+	);
+
+	if (LockOnWidgetClass)
+	{
+		LockOnWidgetComp->SetVisibility(true);
+		LockOnWidgetComp->SetWidgetClass(LockOnWidgetClass);
+		LockOnWidgetComp->InitWidget();
+		LockOnWidgetComp->SetWidgetSpace(EWidgetSpace::Screen);
+		LockOnWidgetComp->SetDrawSize({16,16});
+		LockOnWidgetComp->SetPivot({0.5f,0.5f});
+		LockOnWidgetComp->GetWidget()->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 void ASLEnemy::PossessedBy(AController* NewController)
@@ -70,6 +94,11 @@ void ASLEnemy::Die()
 		SLAbilitySystemComponent->CancelAllAbilities();
 	}
 
+	FSLTargetLockMessage Msg;
+	Msg.TargetActor = this;
+	Msg.bIsLockedOn = false;
+	UGameplayMessageSubsystem::Get(this).BroadcastMessage(FGameplayTag::RequestGameplayTag(FName("Message.LockOn")), Msg);
+
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -88,3 +117,21 @@ void ASLEnemy::Die()
 	//SetLifeSpan(0.0f);
 }
 
+void ASLEnemy::OnTargetLockMessageReceived(FGameplayTag Channel, const FSLTargetLockMessage& Payload)
+{
+	UUserWidget* WidgetPtr = LockOnWidgetComp->GetWidget();
+	if (!WidgetPtr) return;
+	
+	if (Payload.TargetActor != this)
+	{
+		if (Payload.bIsLockedOn == true)
+		{
+			WidgetPtr->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+	else
+	{
+		ESlateVisibility NewVisibility = Payload.bIsLockedOn ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+		WidgetPtr->SetVisibility(NewVisibility);
+	}
+}

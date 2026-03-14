@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayEffect.h"
 #include "GameFramework/Character.h"
+#include "SL/Abilities/GA_Focus.h"
 #include "SL/Interface/IDamageable.h"
 #include "SLEnemy.generated.h"
 
@@ -26,8 +27,10 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
-	void Die();
+	void OnTargetLockMessageReceived(FGameplayTag Channel, const FSLTargetLockMessage& Payload);
 	
+	void Die();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<class USLAbilitySystemComponent> SLAbilitySystemComponent;
@@ -37,4 +40,10 @@ protected:
     
 	UPROPERTY(EditAnywhere, Category = "GAS")
 	TObjectPtr<class USLAbilitySet> LoadedAbilitySet;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<class UUserWidget> LockOnWidgetClass;
+	
+	UPROPERTY()
+	TObjectPtr<class UWidgetComponent> LockOnWidgetComp;
 };

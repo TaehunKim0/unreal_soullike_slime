@@ -122,7 +122,6 @@ void USLAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGameP
             if (AbilitySpec->Ability)
             {
                 AbilitySpec->InputPressed = true;
-
                 if (AbilitySpec->IsActive())
                 {
                     // 이미 실행 중이라면 입력을 전달
