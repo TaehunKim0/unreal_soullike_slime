@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "MVVMViewModelBase.h"
-#include "HeroViewModel.generated.h"
+#include "AttributeViewModel.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SL_API UHeroViewModel : public UMVVMViewModelBase
+class SL_API UAttributeViewModel : public UMVVMViewModelBase
 {
 	GENERATED_BODY()
 

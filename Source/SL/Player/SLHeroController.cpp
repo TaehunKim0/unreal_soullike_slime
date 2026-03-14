@@ -12,7 +12,8 @@
 #include "SL/Abilities/SLAbilitySystemComponent.h"
 #include "SL/Character/SLHero.h"
 #include "SL/Data/SLInputSet.h"
-#include "SL/Mvvm/HeroViewModel.h"
+#include "SL/Mvvm/AttributeViewModel.h"
+#include "SL/UI/BossHpWidget.h"
 #include "SL/UI/HeroHUDWidget.h"
 #include "View/MVVMView.h"
 
@@ -88,9 +89,7 @@ void ASLHeroController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	if (!HeroHUDWidgetClass) return;
-
-	if (!HeroHUDWidget)
+	if (!HeroHUDWidget && HeroHUDWidgetClass)
 	{
 		HeroHUDWidget = CreateWidget<UHeroHUDWidget>(this, HeroHUDWidgetClass);
 		HeroHUDWidget->AddToViewport();
@@ -105,7 +104,7 @@ void ASLHeroController::UpdateHUDViewModel(APawn* InPawn)
 
 	if (!HeroVMInstance) 
 	{
-		HeroVMInstance = NewObject<UHeroViewModel>(this);
+		HeroVMInstance = NewObject<UAttributeViewModel>(this);
 	}
 
 	UMVVMSubsystem* MVVMSubsystem = GEngine->GetEngineSubsystem<UMVVMSubsystem>();
@@ -114,7 +113,7 @@ void ASLHeroController::UpdateHUDViewModel(APawn* InPawn)
 	if (MVVMView)
 	{
 		TScriptInterface<INotifyFieldValueChanged> VMInterface(HeroVMInstance);
-		MVVMView->SetViewModel(FName("HeroViewModel"), VMInterface);
+		MVVMView->SetViewModel(FName("AttributeViewModel"), VMInterface);
        
 		if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(InPawn))
 		{
@@ -122,6 +121,52 @@ void ASLHeroController::UpdateHUDViewModel(APawn* InPawn)
 			{
 				HeroVMInstance->InitializeViewModel(NewASC);
 			}
+		}
+	}
+}
+
+void ASLHeroController::HandleBossWidgetCleanup(AActor* DestroyedActor)
+{
+	if (BossHpWidget)
+	{
+		BossHpWidget->RemoveFromParent();
+		BossHpWidget = nullptr;
+	}
+    
+	BossVMInstance = nullptr;
+}
+
+void ASLHeroController::ShowBossHPBar(APawn* BossPawn)
+{
+	if (!IsLocalController()) return;
+
+	if (!BossHpWidget && BossHpWidgetClass)
+	{
+		BossHpWidget = CreateWidget<UBossHpWidget>(this, BossHpWidgetClass);
+		BossHpWidget->AddToViewport();
+	}
+
+	if (BossHpWidget)
+	{
+		UMVVMSubsystem* MVVMSubsystem = GEngine->GetEngineSubsystem<UMVVMSubsystem>();
+		UMVVMView* BossMVVMView = MVVMSubsystem->GetViewFromUserWidget(BossHpWidget);
+        
+		if (BossMVVMView)
+		{
+			if (!BossVMInstance) BossVMInstance = NewObject<UAttributeViewModel>(this);
+
+			TScriptInterface<INotifyFieldValueChanged> VMInterface(BossVMInstance);
+			BossMVVMView->SetViewModel(FName("AttributeViewModel"), VMInterface);
+              
+			if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(BossPawn))
+			{
+				if (UAbilitySystemComponent* BossASC = ASI->GetAbilitySystemComponent())
+				{
+					BossVMInstance->InitializeViewModel(BossASC);
+				}
+			}
+
+			BossPawn->OnDestroyed.AddDynamic(this, &ASLHeroController::HandleBossWidgetCleanup);
 		}
 	}
 }

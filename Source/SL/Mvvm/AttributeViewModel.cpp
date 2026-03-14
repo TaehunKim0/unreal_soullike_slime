@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SL/Mvvm/HeroViewModel.h"
+#include "SL/Mvvm/AttributeViewModel.h"
 
 #include "SL/Attributes/HealthAttributeSet.h"
 #include "SL/Attributes/StaminaAttributeSet.h"
 
-void UHeroViewModel::InitializeViewModel(UAbilitySystemComponent* ASC)
+void UAttributeViewModel::InitializeViewModel(UAbilitySystemComponent* ASC)
 {
 	if (!ASC) return;
 	
@@ -15,10 +15,10 @@ void UHeroViewModel::InitializeViewModel(UAbilitySystemComponent* ASC)
 		HealthSetPtr = HealthSet;
 			
 		ASC->GetGameplayAttributeValueChangeDelegate(HealthSetPtr->GetHealthAttribute())
-			.AddUObject(this, &UHeroViewModel::OnHealthChanged);
+			.AddUObject(this, &UAttributeViewModel::OnHealthChanged);
        
 		ASC->GetGameplayAttributeValueChangeDelegate(HealthSetPtr->GetMaxHealthAttribute())
-			.AddUObject(this, &UHeroViewModel::OnHealthChanged);
+			.AddUObject(this, &UAttributeViewModel::OnHealthChanged);
 
 		RefreshHealth();
 	}
@@ -27,13 +27,13 @@ void UHeroViewModel::InitializeViewModel(UAbilitySystemComponent* ASC)
 	{
 		StaminaSetPtr = StaminaSet;
 		ASC->GetGameplayAttributeValueChangeDelegate(StaminaSet->GetStaminaAttribute())
-		   .AddUObject(this, &UHeroViewModel::OnStaminaChanged);
+		   .AddUObject(this, &UAttributeViewModel::OnStaminaChanged);
         
 		RefreshStamina();
 	}
 }
 
-void UHeroViewModel::OnHealthChanged(const FOnAttributeChangeData& Data)
+void UAttributeViewModel::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
 	if (HealthSetPtr.IsValid())
 	{
@@ -41,7 +41,7 @@ void UHeroViewModel::OnHealthChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
-void UHeroViewModel::OnStaminaChanged(const FOnAttributeChangeData& Data)
+void UAttributeViewModel::OnStaminaChanged(const FOnAttributeChangeData& Data)
 {
 	if (StaminaSetPtr.IsValid())
 	{
@@ -49,7 +49,7 @@ void UHeroViewModel::OnStaminaChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
-void UHeroViewModel::RefreshHealth()
+void UAttributeViewModel::RefreshHealth()
 {
 	if (HealthSetPtr.IsValid())
 	{
@@ -62,7 +62,7 @@ void UHeroViewModel::RefreshHealth()
 	}
 }
 
-void UHeroViewModel::RefreshStamina()
+void UAttributeViewModel::RefreshStamina()
 {
 	if (StaminaSetPtr.IsValid())
 	{

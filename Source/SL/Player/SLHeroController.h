@@ -20,6 +20,10 @@ class SL_API ASLHeroController : public APlayerController
 
 public:
 	ASLHeroController();
+
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void ShowBossHPBar(APawn* BossPawn);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -33,6 +37,9 @@ protected:
 	void InputAbilityTagReleased(const FInputActionValue& InputActionValue, FGameplayTag GameplayTag);
 
 	void UpdateHUDViewModel(APawn* InPawn);
+
+	UFUNCTION()
+	void HandleBossWidgetCleanup(AActor* DestroyedActor);
 	
 private:
 	void Move(const FInputActionValue& Value);
@@ -41,11 +48,17 @@ private:
 protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UHeroHUDWidget> HeroHUDWidgetClass;
-	TObjectPtr<class UHeroViewModel> HeroVMInstance;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UBossHpWidget> BossHpWidgetClass;
+	
+	TObjectPtr<class UAttributeViewModel> HeroVMInstance;
+	TObjectPtr<class UAttributeViewModel> BossVMInstance;
 
 private:
 	UPROPERTY()
 	TObjectPtr<USLInputSet> LoadedInputSet;
 	UPROPERTY()
 	TObjectPtr<UHeroHUDWidget> HeroHUDWidget;
+	UPROPERTY()
+	TObjectPtr<UBossHpWidget> BossHpWidget;
 };
