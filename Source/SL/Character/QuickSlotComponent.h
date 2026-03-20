@@ -63,7 +63,7 @@ struct FSLUseItemMessage
 	FGameplayTag ItemTag;
 
 	UPROPERTY(BlueprintReadOnly)
-	int32 RemainItemCount;
+	int32 RemainItemCount = 0;
 };
 
 class ASLItem;

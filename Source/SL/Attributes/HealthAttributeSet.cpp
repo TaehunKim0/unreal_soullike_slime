@@ -31,10 +31,11 @@ bool UHealthAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackDat
 		return false;
 	}
 
-	const FGameplayTagContainer* SourceTags = Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
-	if (SourceTags && SourceTags->HasTag(FGameplayTag::RequestGameplayTag("State.Invincible")))
+	const FGameplayTagContainer* TargetTags = Data.EffectSpec.CapturedTargetTags.GetAggregatedTags();
+	if (TargetTags && TargetTags->HasTag(FGameplayTag::RequestGameplayTag("State.Invincible")))
 	{
-	    return false;
+		UE_LOG(LogSL, Warning, TEXT("무적 상태이므로 데미지를 입지 않음"));
+		return false;
 	}
 
 	if (Health.GetCurrentValue() <= 0.0f)
