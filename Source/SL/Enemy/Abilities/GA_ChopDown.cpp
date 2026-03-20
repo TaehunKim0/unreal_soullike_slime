@@ -2,7 +2,7 @@
 
 
 #include "SL/Enemy/Abilities/GA_ChopDown.h"
-
+#include "DrawDebugHelpers.h" 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
@@ -56,7 +56,6 @@ void UGA_ChopDown::OnHitEventReceived(FGameplayEventData Payload)
 	PerformMeleeTrace();
 }
 
-#include "DrawDebugHelpers.h" // 상단에 반드시 포함하세요!
 
 void UGA_ChopDown::PerformMeleeTrace()
 {
@@ -81,6 +80,12 @@ void UGA_ChopDown::PerformMeleeTrace()
         for (const FHitResult& Hit : HitResults)
         {
             AActor* HitActor = Hit.GetActor();
+
+			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit))
+			{
+				K2_CancelAbility();
+				return;
+			}
             
             if (HitActor && HitActor->Implements<UDamageable>() && !AlreadyHitActors.Contains(HitActor))
             {
@@ -97,8 +102,6 @@ void UGA_ChopDown::PerformMeleeTrace()
                         SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
                     }
                 }
-
-                UE_LOG(LogSL, Warning, TEXT("Hit New Target: %s"), *HitActor->GetName());
                 DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 8, FColor::Yellow, false, 2.0f);
             }
         }

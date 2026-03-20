@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "AbilitySystemInterface.h"
 
 namespace SLUtil
 {
@@ -27,5 +28,37 @@ namespace SLUtil
 		}
 
 		return bHit;
+	}
+
+	static bool IsTargetParrying(AActor* Target)
+	{
+		if (IAbilitySystemInterface* ASCHolder = Cast<IAbilitySystemInterface>(Target))
+		{
+			return ASCHolder->GetAbilitySystemComponent()->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("State.Parrying"));
+		}
+		return false;
+	}
+
+	static bool CheckAndHandleParry(AActor* Attacker, AActor* Defender, const FHitResult& Hit)
+	{
+		if (!Attacker || !Defender) return false;
+
+		if (IsTargetParrying(Defender))
+		{
+			UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker);
+			if (SourceASC)
+			{
+				FGameplayEventData Payload;
+				Payload.Instigator = Attacker;
+				Payload.Target = Defender;
+				Payload.ContextHandle = SourceASC->MakeEffectContext();
+				Payload.ContextHandle.AddHitResult(Hit);
+
+				SourceASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.ParrySuccess")), &Payload);
+			}
+			return true; // 패링당함
+		}
+
+		return false; // 패링 아님 (일반 히트)
 	}
 }
