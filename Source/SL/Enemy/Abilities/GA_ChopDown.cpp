@@ -38,7 +38,7 @@ void UGA_ChopDown::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGam
 			this, 
 			FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.ChopDown")),
 			nullptr, 
-			false, 
+			false,
 			false
 		);
 

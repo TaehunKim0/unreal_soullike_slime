@@ -37,6 +37,21 @@ struct FSLEquipItemMessage
 };
 
 USTRUCT(BlueprintType)
+struct FSLEquipWeaponMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AActor> EquipActor = nullptr; 
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UItemData> ItemData = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsEquip = false;
+};
+
+USTRUCT(BlueprintType)
 struct FSLUseItemMessage
 {
 	GENERATED_BODY()
@@ -78,6 +93,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UItemData> CurrentItemData;
+
+	UPROPERTY()
+	TObjectPtr<UItemData> CurrentWeaponData;
 
 	int32 CurrentItemRemainCount;
 };

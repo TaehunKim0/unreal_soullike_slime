@@ -8,6 +8,10 @@
 #include "Engine/DataAsset.h"
 #include "ItemData.generated.h"
 
+UENUM(Blueprintable)
+enum class EItemType : uint8 { Consumable, Weapon, None };
+
+
 /**
  * 
  */
@@ -31,6 +35,9 @@ public:
 	FGameplayTag ItemTag;
 
 	UPROPERTY(EditDefaultsOnly)
+	EItemType ItemType;
+
+	UPROPERTY(EditDefaultsOnly)
 	FText Name;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -38,6 +45,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UTexture2D> Icon;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UStaticMesh> Mesh;
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TSubclassOf<UGameplayEffect>> ItemEffectClassArray;

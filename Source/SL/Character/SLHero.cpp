@@ -7,16 +7,19 @@
 #include "QuickSlotComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Engine/AssetManager.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "SL/Abilities/SLAbilitySystemComponent.h"
 #include "SL/Attributes/HealthAttributeSet.h"
-#include "SL/Attributes/StaminaAttributeSet.h"
-#include "SL/Data/SLAbilitySet.h"
+#include "SL/Data/ItemData.h"
 #include "SL/Data/SLAssetManager.h"
+#include "SL/Mvvm/AttributeViewModel.h"
 #include "SL/Player/SLPlayerState.h"
 #include "SL/Util/SLLogChannels.h"
+
 
 // Sets default values
 ASLHero::ASLHero()
@@ -56,12 +59,13 @@ ASLHero::ASLHero()
 	FollowCamera->FieldOfView = 90.0f;
 
 	QuickSlot = CreateDefaultSubobject<UQuickSlotComponent>(TEXT("QuickSlot"));
+	WeaponMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	WeaponMeshComp->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,TEXT("weaponSocket"));
 }
 
 void ASLHero::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ASLHero::PossessedBy(AController* NewController)
@@ -85,6 +89,13 @@ void ASLHero::PossessedBy(AController* NewController)
 			SLAbilitySystemComponent->AddActorAbilities(this, *AbilitySet);
 			HealthSet = SLAbilitySystemComponent->GetSet<UHealthAttributeSet>();
 		}
+
+		UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(GetWorld());
+		MessageSubsystem.RegisterListener(
+			FGameplayTag::RequestGameplayTag(FName("Message.EquipWeapon")),
+			this,
+				&ASLHero::OnWeaponEquipped
+			);
 	}
 }
 
@@ -98,6 +109,15 @@ void ASLHero::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+void ASLHero::OnWeaponEquipped(FGameplayTag Channel, const FSLEquipWeaponMessage& Payload)
+{
+	if (Payload.ItemData->Mesh)
+	{
+		WeaponMeshComp->SetStaticMesh(Payload.ItemData->Mesh);
+		SLAbilitySystemComponent->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag("State.HasWeapon"));
+	}
+}
+
 void ASLHero::HandleTakeDamage(AActor* Attacker)
 {
 	IDamageable::HandleTakeDamage(Attacker);
@@ -106,6 +126,7 @@ void ASLHero::HandleTakeDamage(AActor* Attacker)
 
 	SLAbilitySystemComponent->ActivateAbility(FGameplayTag::RequestGameplayTag(FName("Ability.Hit")));
 }
+
 
 void ASLHero::Tick(float DeltaTime)
 {
@@ -126,3 +147,4 @@ TObjectPtr<USLAbilitySystemComponent> ASLHero::GetSLAbilitySystemComponent() con
 {
 	return SLAbilitySystemComponent;
 }
+

@@ -68,26 +68,46 @@ void UQuickSlotComponent::AddItem(ASLItem* Item)
 
 	UItemData* NewData = Item->GetItemData();
 	if (!NewData) return;
-
-	CurrentItemData = NewData;
-
-	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(GetWorld());
-	FSLEquipItemMessage ChangeMessage;
-	ChangeMessage.ItemData = CurrentItemData;
-	ChangeMessage.EquipActor = GetOwner();
-	ChangeMessage.bIsEquip = true;
-	MessageSubsystem.BroadcastMessage(FGameplayTag::RequestGameplayTag("Message.EquipItem"), ChangeMessage);
 	
-	FSLPickUpItemMessage Message;
-	Message.ItemData = CurrentItemData;
-	Message.PickupActor = GetOwner();
-	MessageSubsystem.BroadcastMessage(FGameplayTag::RequestGameplayTag("Message.PickupItem"), Message);
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(GetWorld());
 
-	CurrentItemRemainCount = CurrentItemData->Count;
+	switch (NewData->ItemType)
+	{
+	case EItemType::Consumable:
+		{
+			CurrentItemData = NewData;
+			FSLEquipItemMessage ChangeMessage;
+			ChangeMessage.ItemData = CurrentItemData;
+			ChangeMessage.EquipActor = GetOwner();
+			ChangeMessage.bIsEquip = true;
+			MessageSubsystem.BroadcastMessage(FGameplayTag::RequestGameplayTag("Message.EquipItem"), ChangeMessage);
+	
+			FSLPickUpItemMessage Message;
+			Message.ItemData = CurrentItemData;
+			Message.PickupActor = GetOwner();
+			MessageSubsystem.BroadcastMessage(FGameplayTag::RequestGameplayTag("Message.PickupItem"), Message);
+			CurrentItemRemainCount = CurrentItemData->Count;
+			UE_LOG(LogSL, Warning, TEXT("아이템 획득 : %s"), *CurrentItemData->Name.ToString());
+		
+			break;
+		}
+
+	case EItemType::Weapon:
+		{
+			CurrentWeaponData = NewData;
+			FSLEquipWeaponMessage WeaponMessage;
+			WeaponMessage.ItemData = CurrentWeaponData;
+			WeaponMessage.bIsEquip = true;
+			WeaponMessage.EquipActor = GetOwner();
+			MessageSubsystem.BroadcastMessage(FGameplayTag::RequestGameplayTag("Message.EquipWeapon"), WeaponMessage);
+			UE_LOG(LogSL, Warning, TEXT("장비 획득 : %s"), *CurrentWeaponData->Name.ToString());
+			break;
+		}
+		
+	default: ;
+	}
 	
 	Item->Destroy();
-
-	UE_LOG(LogSL, Warning, TEXT("아이템 획득 : %s"), *CurrentItemData->Name.ToString());
 }
 
 void UQuickSlotComponent::BeginPlay()

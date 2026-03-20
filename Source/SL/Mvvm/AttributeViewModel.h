@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "MVVMViewModelBase.h"
 #include "Components/SlateWrapperTypes.h"
+#include "SL/Character/QuickSlotComponent.h"
 #include "SL/Item/SLItem.h"
 #include "AttributeViewModel.generated.h"
 
@@ -34,6 +35,7 @@ protected:
 	//Item
 	void OnItemOverlapped(FGameplayTag Channel, const FSLItemOverlapMessage& Payload);
 	void OnItemEquipped(FGameplayTag Channel, const FSLEquipItemMessage& Payload);
+	void OnWeaponEquipped(FGameplayTag Channel, const FSLEquipWeaponMessage& Payload);
 	void OnItemUsed(FGameplayTag Channel, const FSLUseItemMessage& Payload);
 
 protected:

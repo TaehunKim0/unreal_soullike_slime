@@ -60,11 +60,16 @@ void UAttributeViewModel::InitializeViewModel(UAbilitySystemComponent* ASC)
 	);
 
 	MsgSubsystem.RegisterListener(
+	FGameplayTag::RequestGameplayTag(FName("Message.EquipWeapon")),
+	this,
+		&UAttributeViewModel::OnWeaponEquipped
+	);
+
+	MsgSubsystem.RegisterListener(
 	FGameplayTag::RequestGameplayTag(FName("Message.UseItem")),
 	this,
 		&UAttributeViewModel::OnItemUsed
 	);
-
 }
 
 void UAttributeViewModel::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -111,6 +116,15 @@ void UAttributeViewModel::OnItemEquipped(FGameplayTag Channel, const FSLEquipIte
 		FString String = FString::Printf(TEXT("%d"), Count);
 		auto NewText = FText::FromString(String);
 		UE_MVVM_SET_PROPERTY_VALUE(EquipItemCountText, NewText);
+	}
+}
+
+void UAttributeViewModel::OnWeaponEquipped(FGameplayTag Channel, const FSLEquipWeaponMessage& Payload)
+{
+	if (Payload.bIsEquip == true)
+	{
+		auto NewImage = Payload.ItemData->Icon;
+		UE_MVVM_SET_PROPERTY_VALUE(WeaponImage, NewImage);
 	}
 }
 

@@ -8,6 +8,8 @@
 #include "SL/Interface/IDamageable.h"
 #include "SLHero.generated.h"
 
+struct FSLEquipWeaponMessage;
+struct FGameplayTag;
 class UHealthAttributeSet;
 
 UCLASS()
@@ -25,6 +27,7 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	void OnWeaponEquipped(FGameplayTag Channel, const FSLEquipWeaponMessage& Payload);
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -42,6 +45,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UQuickSlotComponent* QuickSlot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* WeaponMeshComp;
 
 protected:
 	UPROPERTY()
