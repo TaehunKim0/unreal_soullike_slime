@@ -5,6 +5,7 @@
 
 #include "SLAbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Kismet/GameplayStatics.h"
 #include "SL/Util/SLLogChannels.h"
 
 UGA_Parry::UGA_Parry()
@@ -17,7 +18,7 @@ void UGA_Parry::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGamepl
                                 const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	
+
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);

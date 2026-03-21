@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "SL/Abilities/SLGameplayAbility.h"
-#include "GA_ParrySuccess.generated.h"
+#include "GA_Neutralize.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SL_API UGA_ParrySuccess : public USLGameplayAbility
+class SL_API UGA_Neutralize : public USLGameplayAbility
 {
 	GENERATED_BODY()
 
 public:
-	UGA_ParrySuccess();
+	UGA_Neutralize();
 	
 	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const override;
@@ -29,5 +29,5 @@ protected:
 
 protected:
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<class UAnimMontage> ParrySuccessMontage;
+	TObjectPtr<class UAnimMontage> NeutralizeMontage;
 };

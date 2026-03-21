@@ -39,26 +39,34 @@ namespace SLUtil
 		return false;
 	}
 
-	static bool CheckAndHandleParry(AActor* Attacker, AActor* Defender, const FHitResult& Hit)
+	static bool CheckAndHandleParry(AActor* Attacker, AActor* Defender, const FHitResult& Hit, bool bEnemyKnockback)
 	{
 		if (!Attacker || !Defender) return false;
 
 		if (IsTargetParrying(Defender))
 		{
-			UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker);
-			if (SourceASC)
-			{
-				FGameplayEventData Payload;
-				Payload.Instigator = Attacker;
-				Payload.Target = Defender;
-				Payload.ContextHandle = SourceASC->MakeEffectContext();
-				Payload.ContextHandle.AddHitResult(Hit);
+			UAbilitySystemComponent* AttackerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker);
+			UAbilitySystemComponent* DefenderASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Defender);
+      
+			FGameplayEventData Payload;
+			Payload.Instigator = Attacker;
+			Payload.Target = Defender;
+			Payload.ContextHandle = AttackerASC ? AttackerASC->MakeEffectContext() : FGameplayEffectContextHandle();
+			Payload.ContextHandle.AddHitResult(Hit);
 
-				SourceASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.ParrySuccess")), &Payload);
+			if (DefenderASC)
+			{
+				DefenderASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.Hero.ParrySuccess")), &Payload);
 			}
-			return true; // 패링당함
+      
+			if (AttackerASC && bEnemyKnockback)
+			{
+				AttackerASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Neutralize")), &Payload);
+			}
+
+			return true; // 패ling 성공 처리
 		}
 
-		return false; // 패링 아님 (일반 히트)
+		return false;
 	}
 }

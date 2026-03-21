@@ -81,7 +81,7 @@ void UGA_ChopDown::PerformMeleeTrace()
         {
             AActor* HitActor = Hit.GetActor();
 
-			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit))
+			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit, true))
 			{
 				K2_CancelAbility();
 				return;
