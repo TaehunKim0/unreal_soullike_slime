@@ -42,4 +42,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Animation")
 	TObjectPtr<class UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditAnywhere)
+	float AttackRangeOffset = 0.0f;
 };

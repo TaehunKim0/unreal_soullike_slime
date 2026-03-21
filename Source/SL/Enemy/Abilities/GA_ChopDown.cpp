@@ -28,9 +28,21 @@ void UGA_ChopDown::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGam
 
 	if (OwningActor && TargetActor)
 	{
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), TargetActor->GetActorLocation());
-
+		// 1. 방향 계산
 		FVector DirToTarget = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
+    
+		// 2. 오프셋 설정 (몬스터와 플레이어의 캡슐 반지름 합 + 공격 리치)
+		// 몬스터 반지름(약 45) + 플레이어 반지름(약 45) + 알파 = 100~120 정도가 적당합니다.
+		float MinDistance = 110.0f;
+		float FinalOffset = AttackRangeOffset + MinDistance;
+
+		// 3. 실제 이동할 목적지 (MoveTo용)
+		FVector TargetLocation = TargetActor->GetActorLocation() - (DirToTarget * FinalOffset);
+    
+		FVector WarpTargetLocation = TargetActor->GetActorLocation() - (DirToTarget * MinDistance);
+		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), WarpTargetLocation);
+
+		// 5. 회전 설정
 		OwningActor->SetActorRotation(DirToTarget.Rotation());
 	}
 

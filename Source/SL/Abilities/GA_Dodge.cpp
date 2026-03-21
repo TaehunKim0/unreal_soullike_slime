@@ -80,6 +80,9 @@ void UGA_Dodge::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGamep
 {
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
+    USLAbilitySystemComponent* MyASC = Cast<USLAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+    MyASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag(("State.Invincible")));
+
     if (bWasUsingControllerRotation)
     {
         if (ACharacter* Character = Cast<ACharacter>(ActorInfo->AvatarActor.Get()))

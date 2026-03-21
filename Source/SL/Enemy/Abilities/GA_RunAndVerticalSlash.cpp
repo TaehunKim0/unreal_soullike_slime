@@ -47,23 +47,30 @@ void UGA_RunAndVerticalSlash::ActivateAbility(FGameplayAbilitySpecHandle Handle,
 		// 3. AI MoveTo 실행 (Pathfinding 사용)
 		FAIMoveRequest MoveReq;
 		MoveReq.SetGoalLocation(TargetLocation);
-		MoveReq.SetAcceptanceRadius(20.f);
+		MoveReq.SetAcceptanceRadius(100.f);
 		MoveReq.SetAllowPartialPath(true);
 
 		FPathFollowingRequestResult MoveResult = AIC->MoveTo(MoveReq);
+		
+		// 1. 이미 도착했거나 요청이 즉시 끝난 경우
+		if (MoveResult.Code == EPathFollowingRequestResult::AlreadyAtGoal)
+		{
+			StartAttackMontage(MoveResult.MoveId, FPathFollowingResult(EPathFollowingResult::Success));
+			return;
+		}
+		// 2. 경로를 아예 못 찾는 경우 (에러 처리)
+		else if (MoveResult.Code == EPathFollowingRequestResult::Failed)
+		{
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+		
 		if (UPathFollowingComponent* PFollowComp = AIC->GetPathFollowingComponent())
 		{
 			PFollowComp->OnRequestFinished.RemoveAll(this);
 			PFollowComp->OnRequestFinished.AddUObject(this, &UGA_RunAndVerticalSlash::StartAttackMontage);
 		}
 	}
-    
-	// UAbilityTask_MoveToLocation* MoveTask = UAbilityTask_MoveToLocation::MoveToLocation(
-	//    this, NAME_None, TargetLocation, 2.0f, nullptr, nullptr
-	// );
-	//
-	// MoveTask->OnTargetLocationReached.AddDynamic(this, &UGA_RunAndVerticalSlash::StartAttackMontage);
-	// MoveTask->ReadyForActivation();
 }
 
 bool UGA_RunAndVerticalSlash::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -71,6 +78,14 @@ bool UGA_RunAndVerticalSlash::CanActivateAbility(const FGameplayAbilitySpecHandl
 	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
 {
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
+}
+
+void UGA_RunAndVerticalSlash::EndAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateEndAbility, bool bWasCancelled)
+{
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+	StopTracking();
 }
 
 void UGA_RunAndVerticalSlash::OnHitEventReceived(FGameplayEventData Payload)
@@ -102,14 +117,15 @@ void UGA_RunAndVerticalSlash::StartAttackMontage( FAIRequestID RequestID, const 
 	if (TargetActor && OwningActor)
 	{
 		// 1. 즉시 방향 정렬
-		FVector CurrentDir = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
+		FVector TargetLoc = TargetActor->GetActorLocation();
+		FVector OwnerLoc = OwningActor->GetActorLocation();
+		FVector CurrentDir = (TargetLoc - OwnerLoc).GetSafeNormal2D();
+
+		FVector WarpTargetLoc = TargetLoc - (CurrentDir * 110.0f);
+
 		OwningActor->SetActorRotation(CurrentDir.Rotation());
 
-		// ★ 2. 중요: 타이머를 기다리지 않고 "즉시" 워핑 타겟을 한 번 업데이트합니다.
-		// 이렇게 해야 몽타주가 시작되자마자 유효한 타겟 데이터를 읽을 수 있습니다.
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), TargetActor->GetActorLocation());
-
-		// 3. 이후 실시간 추적을 위한 타이머 시작
+		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), WarpTargetLoc);
 		GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &UGA_RunAndVerticalSlash::UpdateTrackingTarget, 0.01f, true);
 	}
 	
@@ -169,7 +185,7 @@ void UGA_RunAndVerticalSlash::PerformMeleeTrace()
 
 			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit, true))
 			{
-				K2_CancelAbility();
+				K2_EndAbility();
 				return;
 			}
             
@@ -201,7 +217,12 @@ void UGA_RunAndVerticalSlash::UpdateTrackingTarget()
 
 	if (OwningActor && TargetActor)
 	{
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), TargetActor->GetActorLocation());
+		FVector TargetLoc = TargetActor->GetActorLocation();
+		FVector OwnerLoc = OwningActor->GetActorLocation();
+		FVector Dir = (TargetLoc - OwnerLoc).GetSafeNormal2D();
+
+		FVector WarpTargetLoc = TargetLoc - (Dir * 110.0f);
+		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), WarpTargetLoc);
 	}
 }
 

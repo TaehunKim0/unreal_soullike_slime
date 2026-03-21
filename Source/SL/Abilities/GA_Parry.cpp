@@ -58,6 +58,9 @@ void UGA_Parry::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGamep
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	USLAbilitySystemComponent* MyASC = Cast<USLAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+	MyASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("State.Parrying"));
 }
 
 void UGA_Parry::OnMontageCompleted()
