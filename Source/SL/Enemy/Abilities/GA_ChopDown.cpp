@@ -23,83 +23,11 @@ void UGA_ChopDown::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGam
 		return;
 	}
 
-	AActor* OwningActor = GetOwningActorFromActorInfo();
-	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
-
-	if (OwningActor && TargetActor)
-	{
-		// 1. 방향 계산
-		FVector DirToTarget = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
-    
-		// 2. 오프셋 설정 (몬스터와 플레이어의 캡슐 반지름 합 + 공격 리치)
-		// 몬스터 반지름(약 45) + 플레이어 반지름(약 45) + 알파 = 100~120 정도가 적당합니다.
-		float MinDistance = 110.0f;
-		float FinalOffset = AttackRangeOffset + MinDistance;
-
-		// 3. 실제 이동할 목적지 (MoveTo용)
-		FVector TargetLocation = TargetActor->GetActorLocation() - (DirToTarget * FinalOffset);
-    
-		FVector WarpTargetLocation = TargetActor->GetActorLocation() - (DirToTarget * MinDistance);
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), WarpTargetLocation);
-
-		// 5. 회전 설정
-		OwningActor->SetActorRotation(DirToTarget.Rotation());
-	}
-
-	if (AttackMontage)
-	{
-		GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &UGA_ChopDown::UpdateTrackingTarget, 0.05f, true);
-		
-		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-		   this, NAME_None, AttackMontage, 1.0f, NAME_None, false, 1.0f
-		);
-		MontageTask->OnCompleted.AddDynamic(this, &UGA_ChopDown::OnMontageCompleted);
-		MontageTask->OnInterrupted.AddDynamic(this, &UGA_ChopDown::OnMontageInterrupted);
-		MontageTask->ReadyForActivation();
-
-		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
-			this, 
-			FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.ChopDown")),
-			nullptr, 
-			false,
-			false
-		);
-
-		WaitEventTask->EventReceived.AddDynamic(this, &UGA_ChopDown::OnHitEventReceived);
-		WaitEventTask->ReadyForActivation();
-	}
-	else
-	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-	}
+	StartTracking();
+	PlayMontageAndWaitHitEvent(AttackMontage, FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.ChopDown")));
 }
 
-void UGA_ChopDown::UpdateTrackingTarget()
-{
-	AActor* OwningActor = GetOwningActorFromActorInfo();
-	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
-
-	if (OwningActor && TargetActor)
-	{
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), TargetActor->GetActorLocation());
-        
-		FVector Dir = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
-		OwningActor->SetActorRotation(FMath::RInterpTo(OwningActor->GetActorRotation(), Dir.Rotation(), 0.05f, 10.0f));
-	}
-}
-
-void UGA_ChopDown::OnHitEventReceived(FGameplayEventData Payload)
-{
-	StopTracking();
-	PerformMeleeTrace();
-}
-
-void UGA_ChopDown::StopTracking()
-{
-	GetWorld()->GetTimerManager().ClearTimer(TrackingTimerHandle);
-}
-
-void UGA_ChopDown::PerformMeleeTrace()
+void UGA_ChopDown::ApplyHit()
 {
 	AActor* OwningActor = GetOwningActorFromActorInfo();
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
@@ -148,23 +76,4 @@ void UGA_ChopDown::PerformMeleeTrace()
             }
         }
     }
-}
-
-bool UGA_ChopDown::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
-	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
-{
-	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
-}
-
-void UGA_ChopDown::OnMontageCompleted()
-{
-	StopTracking();
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-}
-
-void UGA_ChopDown::OnMontageInterrupted()
-{
-	StopTracking();
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }

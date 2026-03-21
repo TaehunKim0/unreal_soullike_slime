@@ -73,32 +73,8 @@ void UGA_RunAndVerticalSlash::ActivateAbility(FGameplayAbilitySpecHandle Handle,
 	}
 }
 
-bool UGA_RunAndVerticalSlash::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
-	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
-{
-	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
-}
-
-void UGA_RunAndVerticalSlash::EndAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	bool bReplicateEndAbility, bool bWasCancelled)
-{
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	StopTracking();
-}
-
-void UGA_RunAndVerticalSlash::OnHitEventReceived(FGameplayEventData Payload)
-{
-	StopTracking();
-	PerformMeleeTrace();
-}
-
 void UGA_RunAndVerticalSlash::StartAttackMontage( FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
-	AActor* OwningActor = GetOwningActorFromActorInfo();
-	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
-
 	if (AAIController* AIC = SLUtil::GetAIControllerFromAbility(this))
 	{
 		if (UPathFollowingComponent* PFollowComp = AIC->GetPathFollowingComponent())
@@ -107,57 +83,11 @@ void UGA_RunAndVerticalSlash::StartAttackMontage( FAIRequestID RequestID, const 
 		}
 	}
 
-	if (Result.Flags == EPathFollowingResult::Aborted)
-	{
-		// 이동이 중단되었다면 어빌리티 종료 (또는 그냥 공격 진행)
-		// K2_EndAbility(); 
-		// return;
-	}
-	
-	if (TargetActor && OwningActor)
-	{
-		// 1. 즉시 방향 정렬
-		FVector TargetLoc = TargetActor->GetActorLocation();
-		FVector OwnerLoc = OwningActor->GetActorLocation();
-		FVector CurrentDir = (TargetLoc - OwnerLoc).GetSafeNormal2D();
-
-		FVector WarpTargetLoc = TargetLoc - (CurrentDir * 110.0f);
-
-		OwningActor->SetActorRotation(CurrentDir.Rotation());
-
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), WarpTargetLoc);
-		GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &UGA_RunAndVerticalSlash::UpdateTrackingTarget, 0.01f, true);
-	}
-	
-	if (AttackMontage)
-	{
-		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-		   this, NAME_None, AttackMontage, 1.0f, NAME_None, false, 1.0f
-		);
-		MontageTask->OnCompleted.AddDynamic(this, &UGA_RunAndVerticalSlash::OnMontageCompleted);
-		MontageTask->OnBlendOut.AddDynamic(this, &UGA_RunAndVerticalSlash::OnMontageCompleted);
-		MontageTask->OnInterrupted.AddDynamic(this, &UGA_RunAndVerticalSlash::OnMontageInterrupted);
-		MontageTask->OnCancelled.AddDynamic(this, &UGA_RunAndVerticalSlash::OnMontageInterrupted);
-		MontageTask->ReadyForActivation();
-
-		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
-			this, 
-			FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.RunAndVerticalSlash")),
-			nullptr, 
-			false,
-			false
-		);
-
-		WaitEventTask->EventReceived.AddDynamic(this, &UGA_RunAndVerticalSlash::OnHitEventReceived);
-		WaitEventTask->ReadyForActivation();
-	}
-	else
-	{
-		K2_EndAbility();
-	}
+	StartTracking();
+	PlayMontageAndWaitHitEvent(AttackMontage, FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.RunAndVerticalSlash")));
 }
 
-void UGA_RunAndVerticalSlash::PerformMeleeTrace()
+void UGA_RunAndVerticalSlash::ApplyHit()
 {
 	AActor* OwningActor = GetOwningActorFromActorInfo();
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
@@ -208,45 +138,4 @@ void UGA_RunAndVerticalSlash::PerformMeleeTrace()
 			}
 		}
 	}
-}
-
-void UGA_RunAndVerticalSlash::UpdateTrackingTarget()
-{
-	AActor* OwningActor = GetOwningActorFromActorInfo();
-	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
-
-	if (OwningActor && TargetActor)
-	{
-		FVector TargetLoc = TargetActor->GetActorLocation();
-		FVector OwnerLoc = OwningActor->GetActorLocation();
-		FVector Dir = (TargetLoc - OwnerLoc).GetSafeNormal2D();
-
-		FVector WarpTargetLoc = TargetLoc - (Dir * 110.0f);
-		SLUtil::UpdateWarpTarget(OwningActor, TEXT("Target"), WarpTargetLoc);
-	}
-}
-
-void UGA_RunAndVerticalSlash::StopTracking()
-{
-	if (GetWorld())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(TrackingTimerHandle);
-
-		if (AAIController* AIC =SLUtil::GetAIControllerFromAbility(this))
-		{
-			AIC->SetFocus(nullptr);
-		}
-	}
-}
-
-void UGA_RunAndVerticalSlash::OnMontageCompleted()
-{
-	StopTracking();
-	K2_EndAbility();
-}
-
-void UGA_RunAndVerticalSlash::OnMontageInterrupted()
-{
-	StopTracking();
-	K2_EndAbility();
 }

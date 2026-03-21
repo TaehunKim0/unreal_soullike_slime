@@ -2,6 +2,8 @@
 #include "AbilitySystemInterface.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "SL/Abilities/SLAbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "MotionWarping/Public/MotionWarpingComponent.h"
 
 namespace SLUtil
