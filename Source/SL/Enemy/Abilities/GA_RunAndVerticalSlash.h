@@ -4,13 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "SL/Abilities/SLGameplayAbility.h"
-#include "GA_ChopDown.generated.h"
+#include "GA_RunAndVerticalSlash.generated.h"
 
+struct FAIRequestID;
+struct FPathFollowingResult;
 /**
  * 
  */
 UCLASS()
-class SL_API UGA_ChopDown : public USLGameplayAbility
+class SL_API UGA_RunAndVerticalSlash : public USLGameplayAbility
 {
 	GENERATED_BODY()
 
@@ -23,6 +25,8 @@ protected:
 	void OnHitEventReceived(FGameplayEventData Payload);
 	
 	void PerformMeleeTrace();
+
+	void StartAttackMontage(FAIRequestID RequestID, const FPathFollowingResult& Result);
 	
 	UFUNCTION()
 	void OnMontageCompleted();
@@ -36,10 +40,11 @@ protected:
 
 protected:
 	FTimerHandle TrackingTimerHandle;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
 	UPROPERTY(EditAnywhere, Category="Animation")
 	TObjectPtr<class UAnimMontage> AttackMontage;
+	
 };

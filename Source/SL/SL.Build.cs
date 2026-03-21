@@ -29,6 +29,7 @@ public class SL : ModuleRules
 	        "GameplayAbilities",
 	        "ModelViewViewModel",
 	        "GameplayMessageRuntime",
+	        "MotionWarping",
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[]

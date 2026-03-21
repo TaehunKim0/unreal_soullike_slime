@@ -3,18 +3,17 @@
 
 #include "SL/Enemy/SLEnemy.h"
 
+#include "MotionWarpingComponent.h"
 #include "SLEnemyAIController.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
-#include "Engine/AssetManager.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
 #include "SL/Abilities/GA_Focus.h"
 #include "SL/Abilities/SLAbilitySystemComponent.h"
 #include "SL/Attributes/HealthAttributeSet.h"
-#include "SL/Data/SLAbilitySet.h"
 #include "SL/Data/SLAssetManager.h"
-#include "SL/Util/SLLogChannels.h"
+#include "MotionWarpingComponent.h"
 
 ASLEnemy::ASLEnemy()
 {
@@ -22,6 +21,8 @@ ASLEnemy::ASLEnemy()
 	SLAbilitySystemComponent = CreateDefaultSubobject<USLAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	LockOnWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	LockOnWidgetComp->SetupAttachment(GetCapsuleComponent());
+
+	MotionWarpingComp = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 }
 
 UAbilitySystemComponent* ASLEnemy::GetAbilitySystemComponent() const

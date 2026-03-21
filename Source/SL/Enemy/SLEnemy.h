@@ -47,4 +47,7 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<class UWidgetComponent> LockOnWidgetComp;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UMotionWarpingComponent> MotionWarpingComp;
 };

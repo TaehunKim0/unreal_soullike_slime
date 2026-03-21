@@ -91,17 +91,41 @@ void USLAbilitySystemComponent::RemoveActorAbilities()
     InputReleasedSpecHandles.Empty();
 }
 
-void USLAbilitySystemComponent::ActivateAbility(FGameplayTag GamePlayTag)
+bool USLAbilitySystemComponent::ActivateAbility(FGameplayTag GamePlayTag)
 {
     for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
     {
         if (Spec.GetDynamicSpecSourceTags().HasTagExact(GamePlayTag))
         {
-            TryActivateAbility(Spec.Handle);
+            if (TryActivateAbility(Spec.Handle))
+            {
+                return true; 
+            }
 
             UE_LOG(LogSL, Warning, TEXT("%s  Try Activate Ability : %s"), *GetAvatarActor()->GetName(), *Spec.Handle.ToString())
         }
     }
+
+    return false;
+}
+
+bool USLAbilitySystemComponent::ActivateAbility(FGameplayTag GamePlayTag, FGameplayAbilitySpecHandle& AbilitySpecHandle)
+{
+    for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+    {
+        if (Spec.GetDynamicSpecSourceTags().HasTagExact(GamePlayTag))
+        {
+            if (TryActivateAbility(Spec.Handle))
+            {
+                AbilitySpecHandle = Spec.Handle;
+                return true; 
+            }
+
+            UE_LOG(LogSL, Warning, TEXT("%s  Try Activate Ability : %s"), *GetAvatarActor()->GetName(), *Spec.Handle.ToString())
+        }
+    }
+
+    return false;
 }
 
 void USLAbilitySystemComponent::ApplyItemEffect(const TSubclassOf<UGameplayEffect>& EffectClass, float Level,

@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "AbilitySystemInterface.h"
+#include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "MotionWarping/Public/MotionWarpingComponent.h"
 
 namespace SLUtil
 {
@@ -69,4 +72,50 @@ namespace SLUtil
 
 		return false;
 	}
+
+	static UBlackboardComponent* GetBlackboardFromAbility(UGameplayAbility* Ability)
+	{
+		if (!Ability) return nullptr;
+
+		APawn* AvatarPawn = Cast<APawn>(Ability->GetAvatarActorFromActorInfo());
+		if (!AvatarPawn) return nullptr;
+
+		AAIController* AIC = Cast<AAIController>(AvatarPawn->GetController());
+		if (!AIC) return nullptr;
+
+		return AIC->GetBlackboardComponent();
+	}
+
+	static AActor* GetActorFromBlackboard(UGameplayAbility* Ability, FName KeyName)
+	{
+		UBlackboardComponent* BB = GetBlackboardFromAbility(Ability);
+		return BB ? Cast<AActor>(BB->GetValueAsObject(KeyName)) : nullptr;
+	}
+
+	static UMotionWarpingComponent* GetMotionWarpingComponent(AActor* InActor)
+	{
+		return InActor ? InActor->FindComponentByClass<UMotionWarpingComponent>() : nullptr;
+	}
+
+	static void UpdateWarpTarget(AActor* InActor, FName WarpTargetName, FVector TargetLocation)
+	{
+		if (auto* MotionWarpComp = GetMotionWarpingComponent(InActor))
+		{
+			MotionWarpComp->AddOrUpdateWarpTargetFromLocation(WarpTargetName, TargetLocation);
+		}
+	}
+
+	static AAIController* GetAIControllerFromAbility(UGameplayAbility* Ability)
+	{
+		if (!Ability) return nullptr;
+
+		AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
+		if (!AvatarActor) return nullptr;
+
+		APawn* Pawn = Cast<APawn>(AvatarActor);
+		if (!Pawn) return nullptr;
+
+		return Cast<AAIController>(Pawn->GetController());
+	}
+	
 }

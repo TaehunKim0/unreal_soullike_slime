@@ -6,6 +6,7 @@
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
 #include "SLBTTask_BlueprintBase.generated.h"
 
+class USLAbilitySystemComponent;
 /**
  * 
  */
@@ -15,7 +16,6 @@ class SL_API USLBTTask_BlueprintBase : public UBTTask_BlueprintBase
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable)
-	AActor* GetSelfActor(UBehaviorTreeComponent* OwnerComp);
-	
+	AActor* GetSelfActor(UBehaviorTreeComponent& OwnerComp);
+	USLAbilitySystemComponent* GetSLASC(UBehaviorTreeComponent& OwnerComp);
 };

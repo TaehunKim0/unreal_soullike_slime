@@ -23,15 +23,26 @@ void UGA_ChopDown::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGam
 		return;
 	}
 
+	AActor* OwningActor = GetOwningActorFromActorInfo();
+	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
+
+	if (OwningActor && TargetActor)
+	{
+		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), TargetActor->GetActorLocation());
+
+		FVector DirToTarget = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
+		OwningActor->SetActorRotation(DirToTarget.Rotation());
+	}
+
 	if (AttackMontage)
 	{
+		GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &UGA_ChopDown::UpdateTrackingTarget, 0.05f, true);
+		
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		   this, NAME_None, AttackMontage, 1.0f, NAME_None, false, 1.0f
 		);
 		MontageTask->OnCompleted.AddDynamic(this, &UGA_ChopDown::OnMontageCompleted);
-		MontageTask->OnBlendOut.AddDynamic(this, &UGA_ChopDown::OnMontageCompleted);
 		MontageTask->OnInterrupted.AddDynamic(this, &UGA_ChopDown::OnMontageInterrupted);
-		MontageTask->OnCancelled.AddDynamic(this, &UGA_ChopDown::OnMontageInterrupted);
 		MontageTask->ReadyForActivation();
 
 		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
@@ -51,11 +62,30 @@ void UGA_ChopDown::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGam
 	}
 }
 
+void UGA_ChopDown::UpdateTrackingTarget()
+{
+	AActor* OwningActor = GetOwningActorFromActorInfo();
+	AActor* TargetActor = SLUtil::GetActorFromBlackboard(this, TEXT("TargetActor"));
+
+	if (OwningActor && TargetActor)
+	{
+		SLUtil::UpdateWarpTarget(OwningActor, TEXT("ChopTarget"), TargetActor->GetActorLocation());
+        
+		FVector Dir = (TargetActor->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
+		OwningActor->SetActorRotation(FMath::RInterpTo(OwningActor->GetActorRotation(), Dir.Rotation(), 0.05f, 10.0f));
+	}
+}
+
 void UGA_ChopDown::OnHitEventReceived(FGameplayEventData Payload)
 {
+	StopTracking();
 	PerformMeleeTrace();
 }
 
+void UGA_ChopDown::StopTracking()
+{
+	GetWorld()->GetTimerManager().ClearTimer(TrackingTimerHandle);
+}
 
 void UGA_ChopDown::PerformMeleeTrace()
 {
@@ -83,7 +113,7 @@ void UGA_ChopDown::PerformMeleeTrace()
 
 			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit, true))
 			{
-				K2_CancelAbility();
+				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 				return;
 			}
             
@@ -117,11 +147,12 @@ bool UGA_ChopDown::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 void UGA_ChopDown::OnMontageCompleted()
 {
-	K2_EndAbility();
+	StopTracking();
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UGA_ChopDown::OnMontageInterrupted()
 {
-	K2_EndAbility();
+	StopTracking();
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
-
