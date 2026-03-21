@@ -9,7 +9,10 @@
 ### **UI Architecture**
 * **Model-View-ViewModel** (Unreal MVVM plugin)
 
-### **Framework & Data**
+### **Plugin**
 * **Gameplay Message Subsystem** (from lyra epic games)
+* **Motion Warping**
+
+### **Data**
 * **Asset Manager**
 * **Data Asset** (AbilitySet, InputSet, ItemData...)
