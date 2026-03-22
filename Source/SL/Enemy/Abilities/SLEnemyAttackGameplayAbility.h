@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SL/Abilities/SLGameplayAbility.h"
+#include "SL/AnimNotify/AnimNotifyState_AttackTrace.h"
 #include "SLEnemyAttackGameplayAbility.generated.h"
 
 /**
@@ -15,6 +16,8 @@ class SL_API USLEnemyAttackGameplayAbility : public USLGameplayAbility
 	GENERATED_BODY()
 
 public:
+	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
@@ -30,7 +33,7 @@ protected:
 	
 protected:
 	virtual void UpdateWarpTarget();
-	virtual	void ApplyHit();
+	virtual	void ApplyHit(const UAnimNotifyState_AttackTrace* Notify);
 	
 	void StartTracking(float Interval = 0.01f);
 	void StopTracking();
@@ -43,5 +46,11 @@ protected:
 	FName WarpTargetName = TEXT("Target");
 
 	UPROPERTY(EditAnywhere, Category = "Tracking")
-	float WarpOffsetDistance = 250.0f;
+	float WarpOffsetDistance = 200.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
+	
+	UPROPERTY()
+	TSet<AActor*> AlreadyHitActors;
 };

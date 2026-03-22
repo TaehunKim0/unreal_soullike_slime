@@ -19,12 +19,6 @@ public:
 	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	
 protected:
-	virtual void ApplyHit() override;
-
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
-	TSubclassOf<UGameplayEffect> DamageEffectClass;
-
 	UPROPERTY(EditAnywhere, Category="Animation")
 	TObjectPtr<class UAnimMontage> AttackMontage;
 };

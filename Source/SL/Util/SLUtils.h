@@ -5,6 +5,7 @@
 #include "SL/Abilities/SLAbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "MotionWarping/Public/MotionWarpingComponent.h"
+#include "SL/AnimNotify/AnimNotifyState_AttackTrace.h"
 
 namespace SLUtil
 {
@@ -118,6 +119,47 @@ namespace SLUtil
 		if (!Pawn) return nullptr;
 
 		return Cast<AAIController>(Pawn->GetController());
+	}
+
+	static FCollisionQueryParams GetIgnoreParams(AActor* IgnoreActor)
+	{
+		FCollisionQueryParams Params;
+		if (IgnoreActor)
+		{
+			Params.AddIgnoredActor(IgnoreActor);
+		}
+		Params.bTraceComplex = false;
+		Params.bReturnPhysicalMaterial = false;
+    
+		return Params;
+	}
+
+	static void DrawDebugAttackShape(UWorld* World, const FVector& Start, const FVector& End, const FQuat& Rotation, EMeleeTraceType TraceType, const FCollisionShape& Shape, bool bHit)
+	{
+		if (!World) return;
+
+		FColor DebugColor = bHit ? FColor::Green : FColor::Red;
+		float Duration = 0.05f; // NotifyTick 마다 그려지므로 짧게 유지
+
+		switch (TraceType)
+		{
+		case EMeleeTraceType::Sphere:
+			DrawDebugSphere(World, Start, Shape.GetSphereRadius(), 12, DebugColor, false, Duration);
+			if (Start != End)
+			{
+				DrawDebugLine(World, Start, End, DebugColor, false, Duration);
+				DrawDebugSphere(World, End, Shape.GetSphereRadius(), 12, DebugColor, false, Duration);
+			}
+			break;
+
+		case EMeleeTraceType::Capsule:
+			DrawDebugCapsule(World, Start, Shape.GetCapsuleHalfHeight(), Shape.GetCapsuleRadius(), Rotation, DebugColor, false, Duration);
+			break;
+
+		case EMeleeTraceType::Box:
+			DrawDebugBox(World, Start, Shape.GetExtent(), Rotation, DebugColor, false, Duration);
+			break;
+		}
 	}
 	
 }

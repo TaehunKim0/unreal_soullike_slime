@@ -47,7 +47,7 @@ void UGA_RunAndVerticalSlash::ActivateAbility(FGameplayAbilitySpecHandle Handle,
 		// 3. AI MoveTo 실행 (Pathfinding 사용)
 		FAIMoveRequest MoveReq;
 		MoveReq.SetGoalLocation(TargetLocation);
-		MoveReq.SetAcceptanceRadius(100.f);
+		MoveReq.SetAcceptanceRadius(70.f);
 		MoveReq.SetAllowPartialPath(true);
 
 		FPathFollowingRequestResult MoveResult = AIC->MoveTo(MoveReq);
@@ -85,57 +85,4 @@ void UGA_RunAndVerticalSlash::StartAttackMontage( FAIRequestID RequestID, const 
 
 	StartTracking();
 	PlayMontageAndWaitHitEvent(AttackMontage, FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Montage.RunAndVerticalSlash")));
-}
-
-void UGA_RunAndVerticalSlash::ApplyHit()
-{
-	AActor* OwningActor = GetOwningActorFromActorInfo();
-	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-	
-	if (!OwningActor) return;
-
-	TArray<FHitResult> HitResults;
-	
-	FVector Right = OwningActor->GetActorRightVector();
-	FVector Center = OwningActor->GetActorLocation() + (OwningActor->GetActorForwardVector() * 150.0f);
-
-	FVector Start = Center - (Right * 150.0f);
-	FVector End = Center + (Right * 150.0f);
-	float Radius = 100.0f; // 휘두르는 궤적의 두께
-
-	bool bHit = SLUtil::MeleeTraceMulti(GetWorld(), OwningActor, Start, End, Radius, HitResults, true);
-
-	if (bHit)
-	{
-		TSet<AActor*> AlreadyHitActors;
-
-		for (const FHitResult& Hit : HitResults)
-		{
-			AActor* HitActor = Hit.GetActor();
-
-			if (SLUtil::CheckAndHandleParry(OwningActor,HitActor, Hit, true))
-			{
-				K2_EndAbility();
-				return;
-			}
-            
-			if (HitActor && HitActor->Implements<UDamageable>() && !AlreadyHitActors.Contains(HitActor))
-			{
-				AlreadyHitActors.Add(HitActor);
-
-				if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor))
-				{
-					FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
-					ContextHandle.AddHitResult(Hit);
-                    
-					FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ContextHandle);
-					if (SpecHandle.IsValid())
-					{
-						SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-					}
-				}
-				DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 8, FColor::Yellow, false, 2.0f);
-			}
-		}
-	}
 }

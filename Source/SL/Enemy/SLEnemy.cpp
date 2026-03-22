@@ -14,6 +14,7 @@
 #include "SL/Attributes/HealthAttributeSet.h"
 #include "SL/Data/SLAssetManager.h"
 #include "MotionWarpingComponent.h"
+#include "Components/SphereComponent.h"
 
 ASLEnemy::ASLEnemy()
 {
