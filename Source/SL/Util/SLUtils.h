@@ -45,7 +45,7 @@ namespace SLUtil
 		return false;
 	}
 
-	static bool CheckAndHandleParry(AActor* Attacker, AActor* Defender, const FHitResult& Hit, bool bEnemyKnockback)
+	static bool CheckAndHandleParry(AActor* Attacker, AActor* Defender, const FHitResult& Hit, bool bCanNeutralize)
 	{
 		if (!Attacker || !Defender) return false;
 
@@ -65,7 +65,7 @@ namespace SLUtil
 				DefenderASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.Hero.ParrySuccess")), &Payload);
 			}
       
-			if (AttackerASC && bEnemyKnockback)
+			if (AttackerASC && bCanNeutralize)
 			{
 				AttackerASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.Enemy.Neutralize")), &Payload);
 			}

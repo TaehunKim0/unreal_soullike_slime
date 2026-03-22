@@ -13,9 +13,8 @@ void USLEnemyAttackGameplayAbility::ActivateAbility(FGameplayAbilitySpecHandle H
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	
 	AlreadyHitActors.Empty();
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 }
 
 void USLEnemyAttackGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -28,8 +27,8 @@ void USLEnemyAttackGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle 
 
 void USLEnemyAttackGameplayAbility::StartTracking(float Interval)
 {
-	GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &USLEnemyAttackGameplayAbility::UpdateWarpTarget, Interval, true);
 	UpdateWarpTarget();
+	GetWorld()->GetTimerManager().SetTimer(TrackingTimerHandle, this, &USLEnemyAttackGameplayAbility::UpdateWarpTarget, Interval, true);
 }
 
 void USLEnemyAttackGameplayAbility::UpdateWarpTarget()
@@ -62,12 +61,11 @@ void USLEnemyAttackGameplayAbility::ApplyHit(const UAnimNotifyState_AttackTrace*
 	if (!MeshComp) return;
 
 	FTransform MeshTransform = MeshComp->GetComponentTransform();
-    
 	FVector CenterLocation = MeshTransform.TransformPosition(Notify->TraceOffset);
 	FQuat MeshQuat = MeshTransform.GetRotation();
 	FQuat TraceRotation = MeshQuat * Notify->TraceRotation.Quaternion();
+	
 	FCollisionShape Shape;
-
 	switch (Notify->TraceType)
 	{
 	case EMeleeTraceType::Sphere:
@@ -85,7 +83,6 @@ void USLEnemyAttackGameplayAbility::ApplyHit(const UAnimNotifyState_AttackTrace*
 	}
 
 	TArray<FHitResult> HitResults;
-	// 고정 위치 Sweep (Start == End)
 	bool bHit = GetWorld()->SweepMultiByChannel(
 		HitResults, 
 		CenterLocation, 
@@ -96,7 +93,6 @@ void USLEnemyAttackGameplayAbility::ApplyHit(const UAnimNotifyState_AttackTrace*
 		SLUtil::GetIgnoreParams(OwningActor)
 	);
 
-	// 디버그 드로잉 (실제 판정 시점에만 그림)
 #if WITH_EDITOR
 	if (Notify->bDrawDebug)
 	{
@@ -104,70 +100,59 @@ void USLEnemyAttackGameplayAbility::ApplyHit(const UAnimNotifyState_AttackTrace*
 	}
 #endif
 
-    if (bHit)
+    if (!bHit) return;
+    for (const FHitResult& Hit : HitResults)
     {
-        for (const FHitResult& Hit : HitResults)
+        AActor* HitActor = Hit.GetActor();
+        if (!HitActor || AlreadyHitActors.Contains(HitActor)) continue;
+
+        if (SLUtil::CheckAndHandleParry(OwningActor, HitActor, Hit, Notify->bCanNeutralize))
         {
-            AActor* HitActor = Hit.GetActor();
-            if (!HitActor || AlreadyHitActors.Contains(HitActor)) continue;
+            StopTracking();
+            K2_EndAbility();
+            return;
+        }
 
-            // 4. 패리 체크 (노티파이의 넉백 옵션 전달)
-            if (SLUtil::CheckAndHandleParry(OwningActor, HitActor, Hit, Notify->bCanKnockback))
+        if (HitActor->Implements<UDamageable>())
+        {
+            AlreadyHitActors.Add(HitActor);
+
+            if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor))
             {
-                // 패리 성공 시 즉시 추적 중단 및 어빌리티 취소
-                StopTracking();
-                K2_CancelAbility();
-                return;
-            }
-
-            // 5. 중복 히트 방지 및 데미지 적용
-            if (HitActor->Implements<UDamageable>())
-            {
-                AlreadyHitActors.Add(HitActor);
-
-                if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor))
+                FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
+                ContextHandle.AddHitResult(Hit);
+                
+                FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ContextHandle);
+                if (SpecHandle.IsValid())
                 {
-                    FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
-                    ContextHandle.AddHitResult(Hit);
-                    
-                    FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ContextHandle);
-                    if (SpecHandle.IsValid())
-                    {
-                        SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-                    }
+                    SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
                 }
             }
         }
     }
 }
 
-void USLEnemyAttackGameplayAbility::PlayMontageAndWaitHitEvent(class UAnimMontage* InMontage,
-                                                               FGameplayTag InEventTag)
+void USLEnemyAttackGameplayAbility::PlayMontageAndWaitHitEvent(UAnimMontage* InMontage, FGameplayTag InEventTag)
 {
-	if (InMontage)
-	{
-		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-		   this, NAME_None, InMontage, 1.0f, NAME_None, false, 1.0f
-		);
-		MontageTask->OnCompleted.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnMontageCompleted);
-		MontageTask->OnInterrupted.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnMontageInterrupted);
-		MontageTask->ReadyForActivation();
+	if (!InMontage) { K2_EndAbility(); return; }
+	
+	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+	   this, NAME_None, InMontage, 1.0f, NAME_None, false, 1.0f
+	);
+	MontageTask->OnCompleted.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnMontageCompleted);
+	MontageTask->OnInterrupted.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnMontageInterrupted);
+	MontageTask->ReadyForActivation();
 
-		UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
-			this, 
-			FGameplayTag::RequestGameplayTag(InEventTag.GetTagName()),
-			nullptr, 
-			false,
-			false
-		);
+	UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+		this, 
+		FGameplayTag::RequestGameplayTag(InEventTag.GetTagName()),
+		nullptr, 
+		false,
+		false
+	);
 
-		WaitEventTask->EventReceived.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnHitEventReceived);
-		WaitEventTask->ReadyForActivation();
-	}
-	else
-	{
-		K2_EndAbility();
-	}
+	WaitEventTask->EventReceived.AddDynamic(this, &USLEnemyAttackGameplayAbility::OnHitEventReceived);
+	WaitEventTask->ReadyForActivation();
 }
 
 void USLEnemyAttackGameplayAbility::StopTracking()

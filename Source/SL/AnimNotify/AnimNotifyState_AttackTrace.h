@@ -35,7 +35,7 @@ public:
 	FGameplayTag EventTag;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
-	bool bCanKnockback = true;
+	bool bCanNeutralize = true;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	bool bDrawDebug = true;
@@ -46,6 +46,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	EMeleeTraceType TraceType = EMeleeTraceType::Sphere;
 
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	FRotator TraceRotation = FRotator::ZeroRotator;
+
+public:
 	UPROPERTY(EditAnywhere, Category = "Range")
 	float TraceRadius = 100.0f;
 
@@ -54,9 +58,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Range")
 	FVector TraceOffset = FVector(0.0f, 0.0f, 0.0f);
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	FRotator TraceRotation = FRotator::ZeroRotator;
 
 	UPROPERTY(EditAnywhere, Category = "Range")
 	bool bUseSocket = false;

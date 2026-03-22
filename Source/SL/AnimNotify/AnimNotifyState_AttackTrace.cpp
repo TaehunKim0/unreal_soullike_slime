@@ -16,14 +16,13 @@ void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
     AActor* Owner = MeshComp->GetOwner();
     if (!Owner) return;
 
-    // 프리뷰 액터에 ASC가 없을 때 로그 에러 방지
     UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
     if (ASC)
     {
         FGameplayEventData Payload;
         Payload.Instigator = Owner;
         Payload.EventTag = EventTag;
-        Payload.EventMagnitude = bCanKnockback ? 1.0f : 0.0f;
+        Payload.EventMagnitude = bCanNeutralize ? 1.0f : 0.0f;
         Payload.OptionalObject = this;
         UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Owner, EventTag, Payload);
     }
@@ -31,13 +30,9 @@ void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 #if WITH_EDITOR
     if (bDrawDebug && Owner->GetWorld())
     {
-        // [통일] 무조건 액터 위치 + 회전된 오프셋 사용
         FTransform MeshTransform = MeshComp->GetComponentTransform();
-        
-        // TraceOffset을 메시의 로컬 좌표계에서 월드로 변환
         FVector CenterLocation = MeshTransform.TransformPosition(TraceOffset);
         
-        // 회전 역시 메시의 회전을 따름
         FQuat MeshQuat = MeshTransform.GetRotation();
         FQuat DebugRotation = MeshQuat * TraceRotation.Quaternion();
         FCollisionShape DebugShape;
@@ -51,12 +46,11 @@ void UAnimNotifyState_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
             DebugShape = FCollisionShape::MakeCapsule(TraceRadius, TraceDistance * 0.5f);
             DebugRotation = DebugRotation * FRotator(0.f, 90.f, 90.f).Quaternion();
         }
-        else // Box
+        else 
         {
             DebugShape = FCollisionShape::MakeBox(FVector(TraceDistance * 0.5f, TraceRadius, TraceRadius));
         }
 
-        // 고정 위치 드로잉
         SLUtil::DrawDebugAttackShape(Owner->GetWorld(), CenterLocation, CenterLocation, DebugRotation, TraceType, DebugShape, false);
     }
 #endif

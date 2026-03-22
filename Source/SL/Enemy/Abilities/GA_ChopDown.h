@@ -16,7 +16,8 @@ class SL_API UGA_ChopDown : public USLEnemyAttackGameplayAbility
 	GENERATED_BODY()
 
 public:
-	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	
 protected:
 	UPROPERTY(EditAnywhere, Category="Animation")

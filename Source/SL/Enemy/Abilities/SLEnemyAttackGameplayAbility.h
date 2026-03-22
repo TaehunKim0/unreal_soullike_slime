@@ -31,17 +31,15 @@ protected:
 	UFUNCTION()
 	virtual void OnHitEventReceived(FGameplayEventData Payload);
 	
-protected:
 	virtual void UpdateWarpTarget();
 	virtual	void ApplyHit(const UAnimNotifyState_AttackTrace* Notify);
 	
+protected:
 	void StartTracking(float Interval = 0.01f);
 	void StopTracking();
 	void PlayMontageAndWaitHitEvent(class UAnimMontage* InMontage, FGameplayTag InEventTag);
 	
 protected:
-	FTimerHandle TrackingTimerHandle;
-    
 	UPROPERTY(EditAnywhere, Category = "Tracking")
 	FName WarpTargetName = TEXT("Target");
 
@@ -53,4 +51,7 @@ protected:
 	
 	UPROPERTY()
 	TSet<AActor*> AlreadyHitActors;
+
+private:
+	FTimerHandle TrackingTimerHandle;
 };
