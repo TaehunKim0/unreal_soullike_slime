@@ -20,6 +20,8 @@ class SL_API UGA_RunAndVerticalSlash : public USLEnemyAttackGameplayAbility
 public:
 	virtual void ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	
 protected:
 	void StartAttackMontage(FAIRequestID RequestID, const FPathFollowingResult& Result);
@@ -27,4 +29,10 @@ protected:
 protected:
 	UPROPERTY(EditAnywhere, Category="Animation")
 	TObjectPtr<class UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditAnywhere, Category="Speed")
+	float RunSpeed = 1000.f;
+
+private:
+	float OriginWalkSpeed = 0.f;
 };

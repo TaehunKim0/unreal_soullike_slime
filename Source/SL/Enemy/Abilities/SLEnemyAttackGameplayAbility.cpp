@@ -121,7 +121,20 @@ void USLEnemyAttackGameplayAbility::ApplyHit(const UAnimNotifyState_AttackTrace*
             {
                 FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
                 ContextHandle.AddHitResult(Hit);
-                
+
+            	if (Notify->bPlayerKnockback)
+            	{
+            		FGameplayEventData Payload;
+            		Payload.Instigator = OwningActor;
+            		Payload.Target = HitActor;
+            		Payload.ContextHandle = ContextHandle;
+
+            		if (TargetASC)
+            		{
+            			TargetASC->HandleGameplayEvent(FGameplayTag::RequestGameplayTag(TEXT("Event.Hero.Knockback")), &Payload);
+            		}
+            	}
+            	
                 FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), ContextHandle);
                 if (SpecHandle.IsValid())
                 {

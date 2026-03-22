@@ -5,6 +5,8 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "SL/Util/SLUtils.h"
 
@@ -35,6 +37,12 @@ void UGA_RunAndVerticalSlash::ActivateAbility(FGameplayAbilitySpecHandle Handle,
 		float AttackRangeOffset = 150.0f; 
 		FVector TargetLocation = TargetActor->GetActorLocation() - (DirToTarget * AttackRangeOffset);
 
+		if (auto Character = Cast<ACharacter>(OwningActor))
+		{
+			OriginWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed; 
+			Character->GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+		}
+
 		FAIMoveRequest MoveReq;
 		MoveReq.SetGoalLocation(TargetLocation);
 		MoveReq.SetAcceptanceRadius(70.f);
@@ -58,6 +66,19 @@ void UGA_RunAndVerticalSlash::ActivateAbility(FGameplayAbilitySpecHandle Handle,
 			PFollowComp->OnRequestFinished.RemoveAll(this);
 			PFollowComp->OnRequestFinished.AddUObject(this, &UGA_RunAndVerticalSlash::StartAttackMontage);
 		}
+	}
+}
+
+void UGA_RunAndVerticalSlash::EndAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateEndAbility, bool bWasCancelled)
+{
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	AActor* OwningActor = GetOwningActorFromActorInfo();
+	if (auto Character = Cast<ACharacter>(OwningActor))
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = OriginWalkSpeed;
 	}
 }
 

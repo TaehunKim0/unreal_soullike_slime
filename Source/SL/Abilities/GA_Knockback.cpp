@@ -12,7 +12,13 @@
 UGA_Knockback::UGA_Knockback()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-	ActivationPolicy = ESLAbilityActivationPolicy::InputTriggeredOnce;
+
+	FAbilityTriggerData TriggerData;
+	TriggerData.TriggerTag = FGameplayTag::RequestGameplayTag(TEXT("Event.Hero.Knockback"));
+	TriggerData.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
+	AbilityTriggers.Add(TriggerData);
+
+	bRetriggerInstancedAbility = true;
 }
 
 void UGA_Knockback::ActivateAbility(FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

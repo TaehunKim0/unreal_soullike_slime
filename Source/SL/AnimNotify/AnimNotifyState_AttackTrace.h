@@ -44,6 +44,9 @@ public:
 	bool bResetHitActorsOnBegin = true;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
+	bool bPlayerKnockback = false;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	EMeleeTraceType TraceType = EMeleeTraceType::Sphere;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
